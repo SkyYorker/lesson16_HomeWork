@@ -1,7 +1,7 @@
 import json
 import datetime
 
-from flask_sqlalchemy import SQLAlchemy
+
 from flask import Flask, request, jsonify
 
 
@@ -41,13 +41,29 @@ def get_users():
 
 @app.route('/orders', methods=['GET', 'POST'])
 def get_orders():
-     if request.method == 'GET':
+    if request.method == 'GET':
         result = []
         for order in Order.query.all():
             result.append(Order.orders_dict(order))
         return jsonify(result)
 
-
+    if request.method == 'POST':
+        order = json.loads(request.data)
+        new_order = Order(
+            id=order['id'],
+            description=order['description'],
+            start_date=order['start_date'],
+            end_date=order['end_date'],
+            address=order['address'],
+            price=order['price'],
+            customer_id=order['customer_id'],
+            executor_id=order['executor_id']
+        )
+        db.session.add(new_order)
+        db.session.commit()
+        return 'заказ добавлен'
+    
+    
 @app.route('/offers', methods=['GET', 'POST'])
 def get_offers():
     if request.method == 'GET':
@@ -56,7 +72,17 @@ def get_offers():
             result.append(Offer.offers_dict(offer))
         return jsonify(result)
 
-
+    if request.method == 'POST':
+        offer = json.loads(request.data)
+        new_offer = Offer(
+            id=offer['id'],
+            order_id=offer['order_id'],
+            executor_id=offer['executor_id']
+        )
+        db.session.add(new_offer)
+        db.session.commit()
+        return 'предложение добавлено'
+    
 @app.route('/users/<int:id>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def get_user(id):
     if request.method == 'GET':
@@ -97,6 +123,7 @@ def get_order(id):
         else:
             return jsonify(Order.orders_dict(order))
 
+       
     elif request.method == 'PUT':      
         order_data = json.loads(request.data)
         order = db.session.query(Order).get(id)
